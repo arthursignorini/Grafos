@@ -1,89 +1,157 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-// Estrutura para um nó da lista de adjacências
-struct Node {
-  int vertex;          // Armazena o número do vértice
-  struct Node* next;   // Ponteiro para o próximo nó na lista
-};
+// Celula da pilha agora armazena o numero do vertice
+typedef struct Celula {
+    int vertice_num;
+    struct Celula *prox;
+} Celula;
 
-// Estrutura para o grafo
-struct Graph {
-  int num_vertices;      // O número total de vértices no grafo
-  struct Node** adjLists; // Array de ponteiros para as listas de adjacências
-};
+typedef struct Pilha {
+    Celula *topo;
+} Pilha;
 
-// Função para criar um novo nó
-struct Node* createNode(int v) {
-  // 1. Aloca dinamicamente memória para um novo nó
-  struct Node* newNode = malloc(sizeof(struct Node));
-  
-  // 2. Acessa os campos da struct através do ponteiro
-  newNode->vertex = v;
-  newNode->next = NULL; 
-  
-  // 3. Retorna o ponteiro para o nó criado
-  return newNode;
+Pilha* iniciarPilha() {
+    Pilha *pilha = malloc(sizeof(Pilha));
+    if (pilha != NULL) {
+        pilha->topo = NULL;
+    }
+    return pilha;
 }
 
-// Função para criar um grafo
-struct Graph* createGraph(int vertices) {
-  struct Graph* graph = malloc(sizeof(struct Graph));
-  graph->num_vertices = vertices;
-  
-  // Aloca memória para o array de ponteiros das listas de adjacências
-  graph->adjLists = malloc(vertices * sizeof(struct Node*));
-
-  // Inicializa cada ponteiro do array como NULL
-  for (int i = 0; i < vertices; i++) {
-    graph->adjLists[i] = NULL;
-  }
-  return graph;
+void inserirPilha(Pilha *pilha, int x) {
+    Celula *temp = malloc(sizeof(Celula));
+    if (temp == NULL) {
+        printf("Erro de alocacao de memoria.\n");
+        exit(1);
+    }
+    temp->vertice_num = x;
+    temp->prox = pilha->topo;
+    pilha->topo = temp;
 }
 
-// Função para adicionar uma aresta (não-direcionada)
-void addEdge(struct Graph* graph, int src, int dest) {
-  // Adiciona aresta de src para dest (sentido 1)
-  struct Node* newNode = createNode(dest);
-  // O novo nó aponta para o que era o primeiro da lista do vértice 'src'
-  newNode->next = graph->adjLists[src];
-  // O cabeçalho da lista agora aponta para o novo nó
-  graph->adjLists[src] = newNode;
-
-  // Como o grafo não é direcionado, fazemos o mesmo para o sentido oposto
-  // Adiciona aresta de dest para src (sentido 2)
-  newNode = createNode(src);
-  newNode->next = graph->adjLists[dest];
-  graph->adjLists[dest] = newNode;
+int removerPilha(Pilha *pilha) {
+    if (pilha->topo == NULL) {
+        printf("PILHA VAZIA\n");
+        exit(1);
+    }
+    Celula *temp = pilha->topo;
+    int elemento = temp->vertice_num;
+    pilha->topo = temp->prox;
+    free(temp);
+    return elemento;
 }
 
-// Função para imprimir o grafo
-void printGraph(struct Graph* graph) {
-  for (int v = 0; v < graph->num_vertices; v++) {
-    // 'temp' é um ponteiro temporário para percorrer a lista
-    struct Node* temp = graph->adjLists[v];
-    printf("\nLista de adjacencias do vertice %d\n", v);
-    while (temp) {
-      printf(" -> %d", temp->vertex);
-      // 'temp' avança para o próximo nó
-      temp = temp->next;
+bool pilhaVazia(Pilha *pilha) {
+    return pilha->topo == NULL;
+}
+
+void inserirArestas(int src, int dest, int **matriz, int tam) {
+    if (src >= 0 && src < tam && dest >= 0 && dest < tam) {
+        matriz[src][dest] = 1;
+        matriz[dest][src] = 1;
+    } else {
+        printf("Aviso: Aresta (%d, %d) fora dos limites do grafo.\n", src, dest);
+    }
+}
+
+void printarGrafo(int **matriz, int tam) {
+    printf("Matriz de Adjacencia:\n");
+
+    printf("  ");
+    for(int i=0; i<tam; i++) {
+      printf("%c ", i+65);
     }
     printf("\n");
-  }
+    for(int i = 0; i < tam; i++) {
+      printf("%c ", i+65);
+        for(int j = 0; j < tam; j++) {
+            printf("%d ", matriz[i][j]);
+        }
+        printf("\n");
+    }
 }
 
-// Exemplo de uso
+void liberarPilha(Pilha *pilha) {
+    while (!pilhaVazia(pilha)) {
+        removerPilha(pilha); 
+    }
+    free(pilha);
+}
+
+bool visitado (int visitados[], int tam, int num) {
+
+  for(int i=0; i<tam; i++) {
+    if(num == visitados[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void DFS(int v, int tam, int **matriz) {
+
+  Pilha* pilha = iniciarPilha();
+  inserirPilha(pilha, v);
+  int visitados[tam];
+  int cont = 0;
+  visitados[cont] = v;
+
+  while(!pilhaVazia(pilha)) {
+
+    int elemento = removerPilha(pilha);
+    printf("%c ", elemento + 65);
+
+    for(int i=0; i<tam; i++) {
+      if(matriz[elemento][i] == 1 && !visitado(visitados, cont, i)){
+        inserirPilha(pilha, i);
+        cont++;
+        visitados[cont] = i;
+      }
+    }
+  }
+    
+}
+
 int main() {
-  struct Graph* graph = createGraph(5);
-  addEdge(graph, 0, 1);
-  addEdge(graph, 0, 4);
-  addEdge(graph, 1, 2);
-  addEdge(graph, 1, 3);
-  addEdge(graph, 1, 4);
-  addEdge(graph, 2, 3);
-  addEdge(graph, 3, 4);
+    int tam;
+    printf("Digite a quantidade de vertices do seu grafo: ");
+    scanf("%d", &tam);
 
-  printGraph(graph);
+    // Alocacao dinamica da matriz de adjacencia
+    int **matriz = malloc(tam * sizeof(int *));
+    for (int i = 0; i < tam; i++) {
+        matriz[i] = malloc(tam * sizeof(int));
+    }
 
-  return 0;
+    // Inicializacao
+    for (int i = 0; i < tam; i++) {
+        for (int j = 0; j < tam; j++) {
+            matriz[i][j] = 0;
+        }
+    }
+
+    
+    int qntdArestas;
+    printf("Digite a quantidade de arestas: ");
+    scanf("%d",&qntdArestas);
+
+    for(int i=0; i<qntdArestas; i++) {
+        char n1, n2;
+        printf("Digite os vertices conectados: ");
+        scanf(" %c %c", &n1,&n2);
+        inserirArestas(n1 - 65, n2 - 65, matriz, tam);
+    }
+    
+    printarGrafo(matriz, tam);
+    
+    char vertice;
+    printf("Vamos fazer o DFS agora, digite a partir de qual vertice voce quer sair: ");
+    scanf(" %c", &vertice);
+
+    DFS(vertice-65, tam, matriz);
+
+  
+    return 0;
 }
