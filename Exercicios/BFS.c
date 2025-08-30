@@ -85,7 +85,6 @@ void BFS (int v, int tam, int**matriz, int distancia[]) {
 
     while (fila->primeiro != fila->ultimo) {
         int v_atual = removerFila(fila);
-        dist++;
         for(int i=0; i<tam; i++) {
             if (visitados[i] == false && matriz[v_atual][i] == 1) {
                distancia[i] = distancia[v_atual] + 1;
