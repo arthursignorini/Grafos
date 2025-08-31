@@ -142,6 +142,7 @@ int main() {
     for(int i=0; i<tam; i++) {
         printf("\nDistancia para o vertice %c: %d", i+65, distancia[i]);
     }
+    
 
 
     return 0;
